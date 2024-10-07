@@ -10,16 +10,11 @@
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  */
 
-package com.nhnacademy;
+package com.nhnacademy.http.channel;
 
-import com.nhnacademy.http.SimpleHttpServer;
-import lombok.extern.slf4j.Slf4j;
+import java.io.IOException;
 
-@Slf4j
-public class App 
-{
-    public static void main( String[] args ){
-        SimpleHttpServer simpleHttpServer = new SimpleHttpServer();
-        simpleHttpServer.start();
-    }
+// #9 Executable interface를 구현한 객체는  WorkerThread(작업자)가 execute method를 호출 합니다.
+public interface Executable {
+    void execute() throws IOException;
 }

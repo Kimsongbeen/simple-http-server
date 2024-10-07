@@ -1,11 +1,24 @@
+/*
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ * + Copyright 2024. NHN Academy Corp. All rights reserved.
+ * + * While every precaution has been taken in the preparation of this resource,  assumes no
+ * + responsibility for errors or omissions, or for damages resulting from the use of the information
+ * + contained herein
+ * + No part of this resource may be reproduced, stored in a retrieval system, or transmitted, in any
+ * + form or by any means, electronic, mechanical, photocopying, recording, or otherwise, without the
+ * + prior written permission.
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ */
+
 package com.nhnacademy.http;
 
+import com.nhnacademy.http.channel.HttpJob;
+import com.nhnacademy.http.channel.RequestChannel;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.concurrent.atomic.AtomicLong;
 
 
 @Slf4j
@@ -14,54 +27,38 @@ public class SimpleHttpServer {
     private final int port;
     private static final int DEFAULT_PORT=8080;
 
-    private final AtomicLong atomicCounter;
+    private final RequestChannel requestChannel;
 
     public SimpleHttpServer(){
         this(DEFAULT_PORT);
     }
+    private WorkerThreadPool workerThreadPool;
+
     public SimpleHttpServer(int port) {
         if(port<=0){
             throw new IllegalArgumentException(String.format("Invalid Port:%d",port));
         }
         this.port = port;
-        atomicCounter = new AtomicLong();
+        // #10 RequestChannel() 초기화 합니다.
+        requestChannel = new RequestChannel();
+
+        // #11 workerThreadPool 초기화 합니다.
+        workerThreadPool = new WorkerThreadPool(requestChannel);
     }
 
     public void start(){
+        // #12 workerThreadPool을 시작 합니다.
+        workerThreadPool.start();
+
         try(ServerSocket serverSocket = new ServerSocket(port);){
-
-            HttpRequestHandler httpRequestHandlerA = new HttpRequestHandler();
-            HttpRequestHandler httpRequestHandlerB = new HttpRequestHandler();
-
-            // #9threadA를 생성하고 시작 합니다.
-            Thread threadA = new Thread(httpRequestHandlerA);
-            threadA.setName("ThreadA");
-            threadA.start();
-
-            // #10threadB를 생성하고 시작 합니다.
-            Thread threadB = new Thread(httpRequestHandlerB);
-            threadB.setName("ThreadB");
-            threadB.start();
-
             while(true){
                 Socket client = serverSocket.accept();
-                /* #O11 count값이 짝수이면 httpRequestHandlerA에 client를 추가 합니다.
-                           count값이 홀수라면 httpRequestHandlerB에 clinet를 추가 합니다.
-                */
-                long count = atomicCounter.incrementAndGet();
+                // #13 Queue(requestChannel)에 HttpJob 객체를 배치 합니다.
+                requestChannel.addHttpJob(new HttpJob(client));
 
-                log.debug("count: {}", atomicCounter);
-                if(count%2 == 0){
-                    httpRequestHandlerA.addRequest(client);
-                }else{
-                    httpRequestHandlerB.addRequest(client);
-                }
-
-                count++;
             }
-
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        }catch (IOException e){
+            log.error("server error:{}",e);
         }
     }
 }
