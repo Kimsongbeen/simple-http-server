@@ -10,10 +10,8 @@
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  */
 
-package com.nhnacademy.http.channel;
+package com.nhnacademy;
 
-import java.io.IOException;
+public class AppTest {
 
-public interface Executable {
-    void execute() throws IOException;
 }

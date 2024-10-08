@@ -24,6 +24,7 @@ import java.net.Socket;
 @Slf4j
 public class SimpleHttpServer {
 
+    @SuppressWarnings("unused")
     private final int port;
     private static final int DEFAULT_PORT=8080;
 
@@ -39,23 +40,22 @@ public class SimpleHttpServer {
             throw new IllegalArgumentException(String.format("Invalid Port:%d",port));
         }
         this.port = port;
-        // #10 RequestChannel() 초기화 합니다.
+        //RequestChannel() 초기화 합니다.
         requestChannel = new RequestChannel();
 
-        // #11 workerThreadPool 초기화 합니다.
+        //workerThreadPool 초기화 합니다.
         workerThreadPool = new WorkerThreadPool(requestChannel);
     }
 
     public void start(){
-        // #12 workerThreadPool을 시작 합니다.
+        //workerThreadPool을 시작 합니다.
         workerThreadPool.start();
 
-        try(ServerSocket serverSocket = new ServerSocket(port);){
+        try(ServerSocket serverSocket = new ServerSocket(8080);){
             while(true){
                 Socket client = serverSocket.accept();
                 // #13 Queue(requestChannel)에 HttpJob 객체를 배치 합니다.
                 requestChannel.addHttpJob(new HttpJob(client));
-
             }
         }catch (IOException e){
             log.error("server error:{}",e);
