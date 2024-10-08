@@ -16,11 +16,15 @@ import com.nhnacademy.http.request.HttpRequest;
 import com.nhnacademy.http.request.HttpRequestImpl;
 import com.nhnacademy.http.response.HttpResponse;
 import com.nhnacademy.http.response.HttpResponseImpl;
+import com.nhnacademy.http.service.HttpService;
+import com.nhnacademy.http.service.IndexHttpService;
+import com.nhnacademy.http.service.InfoHttpService;
 import com.nhnacademy.http.util.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
 import java.net.Socket;
+import java.net.URL;
 import java.util.Objects;
 
 @Slf4j
@@ -44,77 +48,37 @@ public class HttpJob implements Executable {
     @Override
     public void execute(){
 
-        String responseBody = null;
-        String responseHeader = null;
-
         log.debug("method:{}", httpRequest.getMethod());
         log.debug("uri:{}", httpRequest.getRequestURI());
         log.debug("clinet-closed:{}",client.isClosed());
 
-        /* #5 Browser(client)는 특정 page를 요청시 먼저 /favicon.ico 호출 합니다.
-          아래 코드에서는 /favicon.ico 요청을 처리하지 않고 return 합니다.
-        */
         if(httpRequest.getRequestURI().equals("/favicon.ico")){
             return;
         }
 
-        /* #6 /index.html을 요청시  httpRequest.getRequestURI()에 해당되는 html 파일이 존재 하지 않는다면 client 연결을 종료 합니다.
-            ex) /index.html 요청이 온다면 ->  /resources/index.html이 존재하지 않는다면 client 연결을 종료 합니다.
-            ResponseUtils.isExist(httpRequest.getRequestURI()) 이용하여 구현합니다.
-        */
         if(!ResponseUtils.isExist(httpRequest.getRequestURI())){
             try {
-                responseBody = ResponseUtils.tryGetBodyFromFile(ResponseUtils.DEFAULT_404);
-                responseHeader = ResponseUtils.createResponseHeader(404, "utf-8", responseBody.getBytes("utf-8").length);
+                //404 - not -found
+                client.close();
             } catch (IOException e) {
-                log.debug("file is not exist!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                e.printStackTrace();
+                throw new RuntimeException(e);
             }
-        }else{
-            // file exist
-
-            /* #8 responseBody에 응답할 html 파일을 읽습니다.
-           ResponseUtils.tryGetBodyFromFile(httpRequest.getRequestURI()) 이용하여 구현 합니다.
-            */
-            try {
-                responseBody = ResponseUtils.tryGetBodyFromFile(httpRequest.getRequestURI());
-            } catch (IOException e) {
-                log.debug("1111111111111111111111111111111111111");
-                e.printStackTrace();
-            }
-
-            /* #10 ResponseHeader를 생성합니다.
-            ResponseUtils.createResponseHeader() 이용해서 생성합니다. responseHeader를 생성합니다.
-            */
-            try {
-                responseHeader = ResponseUtils.createResponseHeader(200, "UTF-8", responseBody.getBytes("utf-8").length);
-            } catch (UnsupportedEncodingException e) {
-                log.debug("1111111111111111111111111111111111111");
-                e.printStackTrace();
-            }
+            return;
         }
 
-        // #12 PrintWriter을 사용 하여 responseHeader, responseBody를 응답합니다.
-        try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(client.getOutputStream()))){
-            out.write(responseHeader);
-            out.write(responseBody);
-            // out.write(String.format("%s",responseHeader));
-            log.debug("response header : {}",responseHeader);
-            // out.write(String.format("%s",responseBody));
-            // out.write("\r\n");
-            log.debug("response body : {}",responseBody);
-            out.flush();
+        /*TODO#4 RequestURI에 따른 HttpService를 생성하고 service() 호출 합니다.
+           httpService.service(httpRequest, httpResponse) 호출하면
+           service()에서 Request Method에 의해서 doGet or doPost를 호출 합니다
+        */
+
+
+        try {
+            if(Objects.nonNull(client) && client.isConnected()) {
+                client.close();
+            }
         } catch (IOException e) {
-            e.printStackTrace();
-        }finally{
-            try {
-                if(Objects.nonNull(client) && client.isConnected()){
-                    log.debug("client is closed!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                    client.close();
-                }
-            } catch (IOException e) {
-                throw new RuntimeException();
-            }
+            throw new RuntimeException(e);
         }
+
     }
 }

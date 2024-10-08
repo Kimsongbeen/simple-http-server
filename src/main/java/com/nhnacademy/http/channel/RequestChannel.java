@@ -17,7 +17,8 @@ import java.util.Queue;
 
 public class RequestChannel {
     private final Queue<Executable> requestQueue;
-    private final static long QUEUE_MAX_SIZE = 10;
+    private long QUEUE_MAX_SIZE = 10;
+
     public RequestChannel() {
         this.requestQueue = new LinkedList<>();
     }
@@ -33,7 +34,7 @@ public class RequestChannel {
         requestQueue.add(executable);
         notifyAll();
     }
-
+    
     public synchronized Executable getHttpJob(){
         while(requestQueue.isEmpty()){
             try {
