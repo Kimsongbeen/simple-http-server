@@ -29,23 +29,21 @@ public class ApplicationContext  implements Context{
     @Override
     public void setAttribute(String name, Object object) {
         objectNameCheck(name);
-        objectValueCheck(object);
         objectMap.put(name, object);
     }
 
     @Override
-    public void removeAttribute(String name) {
-        objectNameCheck(name);
-        objectMap.remove(name);
+        public void removeAttribute(String name) {
+            objectNameCheck(name);
+            objectMap.remove(name);
     }
 
     @Override
     public Object getAttribute(String name) {
         //object가 존재하지 않는다면 ObjectNotFoundException 예외가 발생합니다.
-
         objectNameCheck(name);
         Object object = objectMap.get(name);
-        if(Objects.isNull(object)){
+        if(Objects.isNull(name)){
             throw new ObjectNotFoundException(name);
         }
         return object;
@@ -54,12 +52,6 @@ public class ApplicationContext  implements Context{
     private void objectNameCheck(String name){
         if(Objects.isNull(name) || name.length() == 0){
             throw new IllegalArgumentException(name);
-        }
-    }
-
-    private void objectValueCheck(Object o){
-        if(Objects.isNull(o)){
-            throw new IllegalArgumentException("value is null");
         }
     }
 }

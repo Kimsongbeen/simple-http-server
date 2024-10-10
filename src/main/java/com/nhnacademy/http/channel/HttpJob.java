@@ -12,9 +12,9 @@
 
 package com.nhnacademy.http.channel;
 
+import com.nhnacademy.http.context.Context;
 import com.nhnacademy.http.context.ContextHolder;
 import com.nhnacademy.http.context.exception.ObjectNotFoundException;
-import com.nhnacademy.http.context.Context;
 import com.nhnacademy.http.request.HttpRequest;
 import com.nhnacademy.http.request.HttpRequestImpl;
 import com.nhnacademy.http.response.HttpResponse;
@@ -56,25 +56,26 @@ public class HttpJob implements Executable {
             return;
         }
 
-        // #6 requestURI()을 이용해서 Context에 등록된 HttpService를 실행 합니다.
-        HttpService httpService = null;
-        Context context = ContextHolder.getApplicationContext();
-
         if(!ResponseUtils.isExist(httpRequest.getRequestURI())){
-            httpService = (HttpService) context.getAttribute(ResponseUtils.DEFAULT_404);
-        }else{
             try {
-                httpService = (HttpService) context.getAttribute(httpRequest.getRequestURI());
-            } catch (ObjectNotFoundException e) {
-                httpService = (HttpService) context.getAttribute(ResponseUtils.DEFAULT_404);
+                //404 - not -found
+                client.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
+            return;
         }
 
+        // #6 requestURI()을 이용해서 Context에 등록된 HttpService를 실행 합니다.
+        Context context = ContextHolder.getApplicationContext();
+        HttpService httpService = null;
+
         try {
+            httpService = (HttpService) context.getAttribute(httpRequest.getRequestURI());
             httpService.service(httpRequest, httpResponse);
-        } catch (RuntimeException e) {
-            httpService = (HttpService) context.getAttribute(ResponseUtils.DEFAULT_405);
-            httpService.service(httpRequest, httpResponse);
+        }catch (ObjectNotFoundException e){
+            log.error("Service Not Found : {}",e.getMessage());
+            return;
         }
 
         try {

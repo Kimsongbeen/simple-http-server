@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
 import java.net.Socket;
+import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -34,28 +35,49 @@ public class HttpRequestImpl implements HttpRequest {
 
     public HttpRequestImpl(Socket socket) {
         this.client = socket;
-        initialize();
+        try {
+            initialize();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    private void initialize() {
+    private void initialize() throws IOException {
 
-        try{
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(client.getInputStream()));
+        StringBuilder result = new StringBuilder();
+        do {
+            try {
+                result.append((char) client.getInputStream().read());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } while (client.getInputStream().available() > 0);
 
-            while (true) {
-                String line = bufferedReader.readLine();
-                log.debug("line:{}", line);
+        log.debug("result:{}", result);
 
-                if (isFirstLine(line)) {
-                    parseHttpRequestInfo(line);
-                }else if (isEndLine(line)){
-                    break;
-                }else{
-                    parseHeader(line);
+        String lines[] = result.toString().split(System.lineSeparator());
+        int count = 0;
+        for(int i=0; i< lines.length; i++){
+            String line = lines[i];
+
+            if(Objects.isNull(line) || line.trim().equals("")){
+                count++;
+                continue;
+            }
+
+            if(i==0){
+                parseHttpRequestInfo(line);
+            }else if(getMethod().equals("GET")){
+                log.debug("get-line:{}",line);
+                parseHeader(line);
+            }else{
+                log.debug("in-line:{}",line);
+                log.debug("in-count:{}",count);
+                if(count>0){
+                    parsePostBody(line);
                 }
             }
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
+
         }
 
     }
@@ -91,15 +113,23 @@ public class HttpRequestImpl implements HttpRequest {
         return String.valueOf(headerMap.get(KEY_REQUEST_PATH));
     }
 
-    private boolean isFirstLine(String line){
-        if( line.toUpperCase().indexOf("GET") > -1 || line.toUpperCase().indexOf("POST") > -1 ){
-            return true;
-        }
-        return false;
-    }
+    @SuppressWarnings("unchecked")
+    public void parsePostBody(String s){
 
-    private boolean isEndLine(String s){
-        return Objects.isNull(s) || s.equals("") ? true : false;
+        try {
+            s = URLDecoder.decode(s,"UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+        log.debug("parse-body:{}",s);
+
+        String params[] = s.split("&");
+        for(String param : params){
+            String key = param.split("=")[0];
+            String value = param.split("=")[1];
+            Map<String,String> map = (Map<String, String>) headerMap.get(KEY_QUERY_PARAM_MAP);
+            map.put(key,value);
+        }
     }
 
     private void parseHeader(String s){
