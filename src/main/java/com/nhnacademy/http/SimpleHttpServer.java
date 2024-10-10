@@ -24,6 +24,7 @@ import java.net.Socket;
 @Slf4j
 public class SimpleHttpServer {
 
+    @SuppressWarnings("unused")
     private final int port;
     private static final int DEFAULT_PORT=8080;
 

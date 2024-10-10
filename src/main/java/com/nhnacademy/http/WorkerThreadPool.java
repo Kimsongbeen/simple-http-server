@@ -15,11 +15,13 @@ package com.nhnacademy.http;
 import com.nhnacademy.http.channel.RequestChannel;
 
 public class WorkerThreadPool {
+    @SuppressWarnings("unused")
     private final int poolSize;
 
     private final static int DEFAULT_POOL_SIZE=5;
 
     private final Thread[] workerThreads;
+    @SuppressWarnings("unused")
     private final RequestChannel requestChannel;
 
     public WorkerThreadPool(RequestChannel requestChannel){

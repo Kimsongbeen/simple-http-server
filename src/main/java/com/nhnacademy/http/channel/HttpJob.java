@@ -24,7 +24,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
 import java.net.Socket;
-import java.net.URL;
 import java.util.Objects;
 
 @Slf4j
@@ -56,6 +55,8 @@ public class HttpJob implements Executable {
             return;
         }
 
+        HttpService httpService = null;
+
         if(!ResponseUtils.isExist(httpRequest.getRequestURI())){
             try {
                 //404 - not -found
@@ -64,12 +65,22 @@ public class HttpJob implements Executable {
                 throw new RuntimeException(e);
             }
             return;
+        }else if(httpRequest.getRequestURI().equals("/index.html")){
+            httpService = new IndexHttpService();
+        }else if(httpRequest.getRequestURI().equals("/info.html")){
+            httpService = new InfoHttpService();
         }
 
-        /*TODO#4 RequestURI에 따른 HttpService를 생성하고 service() 호출 합니다.
+        /* #4 RequestURI에 따른 HttpService를 생성하고 service() 호출 합니다.
            httpService.service(httpRequest, httpResponse) 호출하면
            service()에서 Request Method에 의해서 doGet or doPost를 호출 합니다
         */
+
+        try {
+            httpService.service(httpRequest, httpResponse);
+        } catch (RuntimeException e) {
+            log.debug("NOT FOUND 404", e);
+        }
 
 
         try {

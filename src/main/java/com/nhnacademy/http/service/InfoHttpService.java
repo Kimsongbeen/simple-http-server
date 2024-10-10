@@ -24,7 +24,7 @@ import java.nio.charset.StandardCharsets;
 
 @Slf4j
 public class InfoHttpService implements HttpService {
-    /*TODO#3 InfoHttpService 구현
+    /* #3 InfoHttpService 구현
        - Request : http://localhost:8080/info.html?id=marco&age=40&name=마르코
        - 요청을 처리하고 응답하는 InfoHttpService 입니다.
        - IndexHttpService를 참고하여 doGet을 구현하세요.
@@ -39,6 +39,35 @@ public class InfoHttpService implements HttpService {
     @Override
     public void doGet(HttpRequest httpRequest, HttpResponse httpResponse) {
         //doGet 구현
+        String responseBody = null;
+        try {
+            responseBody = ResponseUtils.tryGetBodyFormFile(httpRequest.getRequestURI());
+        } catch (IOException e) {
+            throw new RuntimeException();
+        }
 
+        String id = httpRequest.getParameter("id");
+        String name = httpRequest.getParameter("name");
+        name = URLDecoder.decode(name, StandardCharsets.UTF_8);
+        String age = httpRequest.getParameter("age");
+
+        log.debug("{$id} : ", id);
+        log.debug("{$name} : ", name);
+        log.debug("{$age} : ", age);
+
+        responseBody = responseBody.replace("{$id}", id);
+        responseBody = responseBody.replace("{name}", name);
+        responseBody = responseBody.replace("{$age}", age);
+
+        String responseHeader = ResponseUtils.createResponseHeader(200, "UTF-8", responseBody.length());
+
+        try (PrintWriter bufferedWriter = httpResponse.getWriter()){
+            bufferedWriter.write(responseHeader);
+            bufferedWriter.write(responseBody);
+            bufferedWriter.flush();
+            log.debug("body: {}", responseBody.toString());
+        } catch (IOException e) {
+            throw new RuntimeException();
+        }
     }
 }
