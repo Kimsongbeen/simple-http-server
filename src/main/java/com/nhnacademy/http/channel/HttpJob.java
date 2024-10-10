@@ -12,13 +12,14 @@
 
 package com.nhnacademy.http.channel;
 
+import com.nhnacademy.http.context.ContextHolder;
+import com.nhnacademy.http.context.exception.ObjectNotFoundException;
+import com.nhnacademy.http.context.Context;
 import com.nhnacademy.http.request.HttpRequest;
 import com.nhnacademy.http.request.HttpRequestImpl;
 import com.nhnacademy.http.response.HttpResponse;
 import com.nhnacademy.http.response.HttpResponseImpl;
 import com.nhnacademy.http.service.HttpService;
-import com.nhnacademy.http.service.IndexHttpService;
-import com.nhnacademy.http.service.InfoHttpService;
 import com.nhnacademy.http.util.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -55,33 +56,26 @@ public class HttpJob implements Executable {
             return;
         }
 
+        // #6 requestURI()을 이용해서 Context에 등록된 HttpService를 실행 합니다.
         HttpService httpService = null;
+        Context context = ContextHolder.getApplicationContext();
 
         if(!ResponseUtils.isExist(httpRequest.getRequestURI())){
+            httpService = (HttpService) context.getAttribute(ResponseUtils.DEFAULT_404);
+        }else{
             try {
-                //404 - not -found
-                client.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+                httpService = (HttpService) context.getAttribute(httpRequest.getRequestURI());
+            } catch (ObjectNotFoundException e) {
+                httpService = (HttpService) context.getAttribute(ResponseUtils.DEFAULT_404);
             }
-            return;
-        }else if(httpRequest.getRequestURI().equals("/index.html")){
-            httpService = new IndexHttpService();
-        }else if(httpRequest.getRequestURI().equals("/info.html")){
-            httpService = new InfoHttpService();
         }
-
-        /* #4 RequestURI에 따른 HttpService를 생성하고 service() 호출 합니다.
-           httpService.service(httpRequest, httpResponse) 호출하면
-           service()에서 Request Method에 의해서 doGet or doPost를 호출 합니다
-        */
 
         try {
             httpService.service(httpRequest, httpResponse);
         } catch (RuntimeException e) {
-            log.debug("NOT FOUND 404", e);
+            httpService = (HttpService) context.getAttribute(ResponseUtils.DEFAULT_405);
+            httpService.service(httpRequest, httpResponse);
         }
-
 
         try {
             if(Objects.nonNull(client) && client.isConnected()) {
@@ -90,6 +84,5 @@ public class HttpJob implements Executable {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
     }
 }

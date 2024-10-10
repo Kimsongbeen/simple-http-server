@@ -34,7 +34,7 @@ public class RequestChannel {
         requestQueue.add(executable);
         notifyAll();
     }
-    
+
     public synchronized Executable getHttpJob(){
         while(requestQueue.isEmpty()){
             try {

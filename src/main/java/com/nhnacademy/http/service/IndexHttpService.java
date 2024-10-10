@@ -14,18 +14,17 @@ package com.nhnacademy.http.service;
 
 import com.nhnacademy.http.request.HttpRequest;
 import com.nhnacademy.http.response.HttpResponse;
+import com.nhnacademy.http.util.CounterUtils;
 import com.nhnacademy.http.util.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 
 @Slf4j
 public class IndexHttpService implements HttpService{
-    /*  #2 IndexHttpService 구현
-       http://localhost:8080/index.html
-       요청을 처리하는 HttpService 입니다.
-    */
 
     @Override
     public void doGet(HttpRequest httpRequest, HttpResponse httpResponse) {
@@ -39,6 +38,23 @@ public class IndexHttpService implements HttpService{
             throw new RuntimeException(e);
         }
 
+        String id = httpRequest.getParameter("id");
+        String name = httpRequest.getParameter("name");
+        name = URLDecoder.decode(name, StandardCharsets.UTF_8);
+        String age = httpRequest.getParameter("age");
+
+        log.debug("id : {} ", id);
+        log.debug("name : {} ", name);
+        log.debug("age : {} ", age);
+
+        responseBody = responseBody.replace("{$id}", id);
+        responseBody = responseBody.replace("{$name}", name);
+        responseBody = responseBody.replace("{$age}", age);
+
+        // #8 CounterUtils.increaseAndGet()를 이용해서 context에 있는 counter 값을 증가시키고, 반환되는 값을 index.html에 반영 합니다.
+            //${count} <-- counter 값을 치환 합니다.
+        responseBody = responseBody.replace("${count}", String.valueOf(CounterUtils.increaseAndGet()));
+
         //Header-설정
         String responseHeader = ResponseUtils.createResponseHeader(200,"UTF-8",responseBody.length());
 
@@ -47,7 +63,6 @@ public class IndexHttpService implements HttpService{
             bufferedWriter.write(responseHeader);
             bufferedWriter.write(responseBody);
             bufferedWriter.flush();
-            log.debug("body:{}",responseBody.toString());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
