@@ -87,14 +87,15 @@ class HttpRequestImplTest {
     @Test
     void getHeader_contentType() {
         String contentType = request.getHeader("Content-Type");
-        assertEquals("Content-Type", contentType);
-        // log.debug("Content-Type:{}",contentType);
-        // Assertions.assertTrue(contentType.contains("application/x-www-form-urlencoded"));
+        // assertEquals("content-type", contentType);
+        System.out.println(request.getHeader("Content-Type"));
+        log.debug("Content-Type:{}",contentType);
+        Assertions.assertTrue(contentType.contains("application/x-www-form-urlencoded"));
     }
 
     @Test
     void getHeader_charset() {
-        String charset = request.getHeader("charset");
+        String charset = request.getHeader("Content-Type");
         log.debug("charset:{}",charset);
         Assertions.assertTrue(charset.toLowerCase().contains("utf-8"));
     }
@@ -105,5 +106,4 @@ class HttpRequestImplTest {
         log.debug("uri:{}", uri);
         Assertions.assertTrue(uri.contains("index.html"));
     }
-
 }

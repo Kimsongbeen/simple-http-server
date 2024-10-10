@@ -17,9 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.*;
 import java.net.Socket;
 import java.net.URLDecoder;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @Slf4j
 public class HttpRequestImpl implements HttpRequest {
@@ -53,7 +51,7 @@ public class HttpRequestImpl implements HttpRequest {
             }
         } while (client.getInputStream().available() > 0);
 
-        log.debug("result:{}", result);
+        log.debug("asdfasdf  result:{}", result);
 
         String lines[] = result.toString().split(System.lineSeparator());
         int count = 0;
@@ -70,9 +68,11 @@ public class HttpRequestImpl implements HttpRequest {
             }else if(getMethod().equals("GET")){
                 log.debug("get-line:{}",line);
                 parseHeader(line);
-            }else{
+            }else if(getMethod().equals("POST")){
                 log.debug("in-line:{}",line);
                 log.debug("in-count:{}",count);
+                parseHeader(line);
+
                 if(count>0){
                     parsePostBody(line);
                 }
@@ -98,6 +98,7 @@ public class HttpRequestImpl implements HttpRequest {
 
     @Override
     public String getHeader(String name) {
+        System.out.println("12345 "+headerMap.get(name));
         return String.valueOf(headerMap.get(name));
     }
     @Override
@@ -132,15 +133,27 @@ public class HttpRequestImpl implements HttpRequest {
         }
     }
 
-    private void parseHeader(String s){
-        String[] hStr = s.split(HEADER_DELIMER);
+    // final edit part
+    private void parseHeader(String s) {
+    // ":"를 기준으로 split, 최대 2개의 요소로 분리
+    String[] hStr = s.split("\\:", 2);  // 두 번째 ":" 이후는 모두 value로 처리
+
+    System.out.println("@@@@@ : " + Arrays.toString(hStr));
+
+    if (hStr.length == 2) {
         String key = hStr[0].trim();
         String value = hStr[1].trim();
 
-        if(Objects.nonNull(key) && key.length()>0) {
+        System.out.printf("key: %s, value: %s\n", key, value);
+
+        if (Objects.nonNull(key) && key.length() > 0) {
             headerMap.put(key, value);
         }
+    } else {
+        System.out.printf("Invalid header format: %s\n", s);
     }
+}
+
 
     private void parseHttpRequestInfo(String s) {
         String arr[] = s.split(" ");
